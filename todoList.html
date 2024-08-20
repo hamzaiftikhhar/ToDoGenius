@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToDoGenius</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <link rel="icon" href="../static/images/icon.png" type="image/x-icon" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+<body>
+    <div class="container m-5 p-2 rounded mx-auto bg-light shadow ">
+        <!-- App title section -->
+        <div class="row m-1 p-4">
+            <div class="col">
+                <div class="p-1 h1 text-primary text-center mx-auto display-inline-block">
+                    <img src="../static/images/icon.png" alt="icon" style="width: 40px;height: 40px;">
+                    <u>ToDoGenius</u>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create todo section -->
+        <div class="row m-1 p-3">
+            <div class="col col-11 mx-auto">
+                <div class="row bg-white rounded shadow-sm p-2 add-todo-wrapper align-items-center justify-content-center">
+                    <div class="col">
+                        <input class="form-control form-control-lg border-0 add-todo-input bg-transparent rounded" type="text" id="taskDesc" placeholder="Add new ..">
+                    </div>
+                    <div class="col-auto m-0 px-2 d-flex align-items-center">
+                        <input type="date" name="taskDate" class="form-control custom-date-input" id="taskDate">
+                        <select class="form-control custom-date-input" style="margin:5px;" id="taskStatus">
+                            <option value="Todo" selected>Todo</option>
+                            <option value="in-progress">in-progress</option>
+                            <option value="Complete">Complete</option>
+                        </select>
+                    </div>
+                    <div class="col-auto px-0 mx-0 mr-2">
+                        <button type="button" class="btn btn-primary" id="add" onclick="addTask()">Add</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="p-2 mx-4 border-black-25 border-bottom"></div>
+
+        <!-- View options section -->
+        <div class="row m-1 p-3 px-5 justify-content-end">
+            <div class="col-auto d-flex align-items-center">
+                <label class="text-secondary my-2 pr-2 view-opt-label">Filter</label>
+                <select class="custom-select custom-select-sm btn my-2" id="filterStatus">
+                    <option value="all" selected>All</option>
+                    <option value="Todo">Todo</option>
+                    <option value="in-progress">in-progress</option>
+                    <option value="Complete">Complete</option>
+                </select>
+            </div>
+            <div class="col-auto d-flex align-items-center px-1 pr-3">
+                <label class="text-secondary my-2 pr-2 view-opt-label">Sort</label>
+                <select class="custom-select custom-select-sm btn my-2" id="sortTasks">
+                    <option value="none" selected>None</option>
+                    <option value="asc">A-Z</option>
+                    <option value="date">Due Date</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Table Header -->
+        <table class="table " id="Todo">
+            <thead class="thead-light">
+                <tr>
+                    <th>Task Description</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-center">Edit & Date</th>
+                </tr>
+            </thead>
+            <tbody id="taskList">
+                <!-- Todo list section -->
+                {% for todo in data %}
+                <tr class="task-row" data-status="{{ todo.status }}" data-date="{{ todo.date }}">
+                    <!-- Task Description -->
+                    <td class="align-middle">
+                        <div class="d-flex align-items-center">
+                            <input id="" type="checkbox"></input>
+                            <p class="form-control form-control-lg border-0 edit-todo-input bg-transparent rounded px-3">{{ todo.taskDesc }}</p>
+                        </div>
+                    </td>
+
+                    <!-- Status -->
+                    <td class="align-middle text-center">
+                        <div class="d-flex justify-content-center">
+                            <div class="rounded bg-white border 
+                                {% if todo.status == 'Complete' %}
+                                    border-success
+                                {% elif todo.status == 'in-progress' %}
+                                    border-warning
+                                {% else %}
+                                    border-danger
+                                {% endif %}
+                            ">
+                                <h6 class="m-2">{{ todo.status }}</h6>
+                            </div>
+                        </div>
+                    </td>
+
+                    <!-- Edit & Date -->
+                    <td class="align-middle text-center">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <i class="fas fa-pencil-alt text-info" data-toggle="tooltip" data-placement="bottom" onclick="updateTask('{{todo.id}}','{{todo.taskDesc}}','{{todo.status}}','{{todo.date}}')" title="Edit todo"></i>
+                            <i class="fa fa-trash-alt text-danger btn" data-toggle="tooltip" data-placement="bottom" onclick="return confirm('Are you sure you want to delete this item?'),deleteTask('{{todo.id}}')" title="Delete todo"></i>
+                        </div>
+                        <label class="date-label my-2 text-black-50">{{ todo.date }}</label>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="modal" id="updateModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title">Update TodoList</h4>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="text">Update Description</label>
+                        <input type="text" style="width: 450px;border-radius: 20px;" id="updateDesc" class="form-control">
+                        <br>
+                        <label class="text">Update Status</label>
+                        <select class="form-control"  style="width: 450px;border-radius: 20px;"type id="updateStatus">
+                            <option value="Todo" >Todo</option>
+                            <option value="in-progress">in-progress</option>
+                            <option value="Complete">Complete</option>
+                        </select>
+                        <br>
+                        <label class="text">Update Date</label>
+                        <input type="date" style="width: 450px;border-radius: 20px;" id="updateDate" class="form-control">
+                        <br>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" id="updateData2" class="btn btn-primary" data-dismiss="modal">Update</button>
+                        <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery and Bootstrap JS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('#filterStatus').on('change', function () {
+                var filterValue = $(this).val();
+                $('.task-row').each(function () {
+                    var taskStatus = $(this).data('status');
+                    if (filterValue === 'all' || taskStatus === filterValue) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+            });
+
+            // Sort functionality
+            $('#sortTasks').on('change', function () {
+                var sortValue = $(this).val();
+                var rows = $('#taskList tr').get();
+
+                rows.sort(function (a, b) {
+                    var taskA = $(a).find('.edit-todo-input').text().toUpperCase();
+                    var taskB = $(b).find('.edit-todo-input').text().toUpperCase();
+                    var dateA = $(a).data('date');
+                    var dateB = $(b).data('date');
+
+                    if (sortValue === 'asc') {
+                        return (taskA < taskB) ? -1 : (taskA > taskB) ? 1 : 0;
+                    } else if (sortValue === 'date') {
+                        return new Date(dateA) - new Date(dateB);
+                    }
+                    return 0;  
+                });
+
+                $.each(rows, function (index, row) {
+                    $('#taskList').append(row);
+                });
+            });
+        });
+
+
+        function addTask() {
+            var taskDate = $('#taskDate').val();
+            var taskStatus = $('#taskStatus').val();
+            var taskDesc = $('#taskDesc').val();
+
+            $.ajax({
+                url: '/addTask',
+                type: 'POST',
+                data: {
+                    'taskDate': taskDate,
+                    'taskDesc': taskDesc,
+                    'taskStatus': taskStatus,
+                },
+                success: function (responses) {
+                    alert(responses.message);
+                    $("#Todo").load(location.href + " #Todo");                
+                },
+                error() {
+                    alert("An error occurred!");
+                }
+            });
+
+            $("#taskDesc").val('');
+            $("#taskDate").val('');
+            $("#taskStatus").val('');
+        }
+
+        function deleteTask(id){
+            $.ajax({
+                url: '/deleteTask',
+                type: 'POST',
+                data: {
+                    'id': id,
+                },
+                success: function (response) {
+                    $("#Todo").load(location.href + " #Todo");
+                },
+                error() {
+                    alert("An error occurred!");
+                }
+            });
+        }
+        
+        function updateTask(id,Desc,status,date){
+            $('#updateStatus').val(status);
+            $('#updateDesc').val(Desc);
+            $('#updateDate').val(date);
+
+            $('#updateModal').modal('show');
+            
+            $('#updateData2').off('click').on('click', function() {
+                var updatedDesc = $('#updateDesc').val();
+                var updatedStatus = $('#updateStatus').val();
+                var updatedDate = $('#updateDate').val();
+                
+                $.ajax({
+                    url: '/updateTask', 
+                    type: 'POST', 
+                    data: {
+                    'id': id,
+                    'status' : updatedStatus,
+                    'Desc' : updatedDesc,
+                    'date' : updatedDate
+                },
+                    success: function(response) {
+                        alert(response);
+                        $("#Todo").load(location.href + " #Todo");
+                    },
+                    error: function() {
+                        alert('An error occurred');
+                    }
+                });
+            });
+        }
+
+    </script>
+</body>
+
+</html>
